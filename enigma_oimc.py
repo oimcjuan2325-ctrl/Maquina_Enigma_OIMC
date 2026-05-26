@@ -3,9 +3,8 @@ import json
 import os
 
 # 1. CONFIGURACIÓN DE LA PÁGINA
-st.set_page_config(page_title="Máquina Enigma O.I.M.C.", page_icon="🔐", layout="centered")
+st.set_page_config(page_title="Máquina Enigma O.I.M.C.", page_icon="𓁺", layout="centered")
 
-# Archivo global en el servidor para almacenar los mensajes permanentes
 DB_MENSAJES = "enigma_mensajes.json"
 
 # 2. BASE DE DATOS DE CUENTAS Y PINES OFICIALES
@@ -22,17 +21,67 @@ CUENTAS_PIN = {
     "Amets": "1053"
 }
 
+# Lista ordenada de ciudadanos
 CIUDADANOS = sorted(list(CUENTAS_PIN.keys()))
 
-# 3. LÓGICA DEL CIFRADO ESPEJO ENIGMA (Atbash)
-ABECEDARIO = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZabcdefghijklmnñopqrstuvwxyz"
-AL_REVES   = "ZYXWVUTSRQPONÑMLKJIHGFEDCBAzyxwvutsrqponñmlkjihgfedcba"
-mapa_espejo = str.maketrans(ABECEDARIO, AL_REVES)
+# 3. DICCIONARIO UNIVERSAL DE JEROGLÍFICOS O.I.M.C. (¡TODAS LAS LETRAS COMPROBADAS!)
+JEROGLIFICOS = {
+    "A": "⭡", 
+    "B": "𝌇", 
+    "C": "亗", 
+    "D": "⨂", 
+    "E": "⩦", 
+    "F": "⎔", 
+    "G": "▣", 
+    "H": "⫿", 
+    "I": "⁜", 
+    "J": "⧉", 
+    "K": "⋔", 
+    "L": "◬", 
+    "M": '"亗"', 
+    "N": "⚡", 
+    "Ñ": "⛩", 
+    "O": "☉", 
+    "P": "⭧", 
+    "Q": "⿿", 
+    "R": "♾", 
+    "S": "🜔", 
+    "T": "⏃", 
+    "U": "⊔", 
+    "V": "⪧", 
+    "W": "⎿", 
+    "X": "⧖", 
+    "Y": "↟", 
+    "Z": "⟐", 
+    " ": "  "
+}
 
-def cifrar_texto(texto):
-    return texto.translate(mapa_espejo)
+# Crear el diccionario inverso automático para descifrar
+INVERSO_JEROGLIFICOS = {v: k for k, v in JEROGLIFICOS.items() if k != " "}
 
-# 4. SISTEMA DE ALMACENAMIENTO PERMANENTE (BASE DE DATOS GLOBAL)
+# Funciones de traducción
+def traducir_a_jeroglifico(texto):
+    resultado = []
+    for letra in texto.upper():
+        if letra in JEROGLIFICOS:
+            resultado.append(JEROGLIFICOS[letra])
+        else:
+            resultado.append(letra)
+    return " ".join(resultado)
+
+def traducir_a_espanol(texto_cifrado):
+    simbolos = texto_cifrado.split(" ")
+    resultado = []
+    for s in simbolos:
+        if s in INVERSO_JEROGLIFICOS:
+            resultado.append(INVERSO_JEROGLIFICOS[s])
+        elif s == "":
+            resultado.append(" ")
+        else:
+            resultado.append(s)
+    return "".join(resultado).replace("  ", " ")
+
+# 4. SISTEMA DE ALMACENAMIENTO PERMANENTE
 def cargar_mensajes():
     if os.path.exists(DB_MENSAJES):
         try:
@@ -50,103 +99,89 @@ def guardar_mensajes(mensajes):
 if "enigma_usuario" not in st.session_state:
     st.session_state.enigma_usuario = None
 
-# --- PANTALLA 1: INICIAR SESIÓN ---
+# --- LOGIN ---
 if st.session_state.enigma_usuario is None:
-    st.title("🔐 Sistema Enigma O.I.M.C. - Login")
-    st.write("Introduce tus credenciales autorizadas para acceder a la máquina de cifrado.")
+    st.title("𓁺 Central Enigma O.I.M.C. - Autenticación")
+    usuario_input = st.text_input("Nombre del Ciudadano:")
+    pin_input = st.text_input("PIN Secreto:", type="password")
     
-    usuario_input = st.text_input("Nombre de la cuenta / Ciudadano:")
-    pin_input = st.text_input("Introduce tu PIN de 4 dígitos:", type="password")
-    
-    if st.button("Acceder a la Máquina Enigma"):
+    if st.button("Activar Enigma"):
         if usuario_input in CUENTAS_PIN and CUENTAS_PIN[usuario_input] == pin_input:
             st.session_state.enigma_usuario = usuario_input
-            st.success(f"¡Acceso concedido! Bienvenido, Agente {usuario_input}.")
             st.rerun()
         else:
-            st.error("❌ Nombre de cuenta o PIN incorrecto. Inténtalo de nuevo.")
+            st.error("❌ Credenciales incorrectas.")
 
-# --- PANTALLA 2: MÁQUINA ENIGMA EN ACCIÓN ---
+# --- PANEL PRINCIPAL ---
 else:
     usuario_actual = st.session_state.enigma_usuario
-    st.title("🔐 Panel de Inteligencia Enigma O.I.M.C.")
-    st.subheader(f"Agente Activo: {usuario_actual}")
+    st.title("𓁺 Protocolo de Cifrado Jeroglífico")
+    st.subheader(f"Operador: {usuario_actual}")
     st.write("---")
 
-    # Pestañas de la aplicación
     pestana1, pestana2, pestana3, pestana4 = st.tabs([
         "🔑 Cifrar Mensaje", 
         "🔓 Descifrar Mensaje", 
-        "🚀 Enviar Mensaje Cifrado",
+        "🚀 Enviar Jeroglífico",
         "📥 Bandeja de Entrada"
     ])
 
-    # PESTAÑA 1: CIFRAR MENSAJE
+    # 1. CIFRAR
     with pestana1:
-        st.subheader("Cifrar Mensaje Nuevo")
-        texto_a_cifrar = st.text_area("Escribe el mensaje en español que quieres ocultar:", key="cifrar_input")
+        st.subheader("Convertir Español a Jeroglífico O.I.M.C.")
+        texto_a_cifrar = st.text_area("Escribe en español:", key="cifrar_input")
         if texto_a_cifrar:
-            resultado_cifrado = cifrar_texto(texto_a_cifrar)
-            st.write("**Mensaje Cifrado:**")
-            st.code(resultado_cifrado, language="text")
+            cifrado = traducir_a_jeroglifico(texto_a_cifrar)
+            st.write("**Código Jeroglífico generado (puedes copiarlo):**")
+            st.code(cifrado, language="text")
 
-    # PESTAÑA 2: DESCIFRAR MENSAJE
+    # 2. DESCIFRAR
     with pestana2:
-        st.subheader("Descifrar Código Enigma")
-        texto_a_descifrar = st.text_area("Pega aquí el código cifrado para saber qué significa:", key="descifrar_input")
+        st.subheader("Descifrar Jeroglífico")
+        texto_a_descifrar = st.text_area("Pega los jeroglíficos aquí:", key="descifrar_input")
         if texto_a_descifrar:
-            resultado_descifrado = cifrar_texto(texto_a_descifrar)
-            st.write("**Mensaje Descifrado:**")
-            st.code(resultado_descifrado, language="text")
+            descifrado = traducir_a_espanol(texto_a_descifrar)
+            st.write("**Texto Traducido al Español:**")
+            st.code(descifrado, language="text")
 
-    # PESTAÑA 3: ENVIAR MENSAJE CIFRADO
+    # 3. ENVIAR
     with pestana3:
         st.subheader("Enviar Mensaje Encriptado")
         opciones_destino = [c for c in CIUDADANOS if c != usuario_actual]
-        destinatario = st.selectbox("Selecciona a quién le envías el mensaje:", opciones_destino)
+        destinatario = st.selectbox("Destinatario:", opciones_destino)
+        mensaje_para_enviar = st.text_area("Escribe el mensaje en español:", key="enviar_input")
         
-        mensaje_para_enviar = st.text_area("Escribe el mensaje (se encriptará automáticamente):", key="enviar_input")
-        
-        if st.button("Enviar"):
+        if st.button("Transmitir"):
             if mensaje_para_enviar:
-                mensaje_secreto = cifrar_texto(mensaje_para_enviar)
-                
-                # Cargamos lo que haya en el archivo del servidor actual, modificamos y guardamos inmediatamente
+                secreto = traducir_a_jeroglifico(mensaje_para_enviar)
                 db_actual = cargar_mensajes()
                 if destinatario not in db_actual:
                     db_actual[destinatario] = []
-                
                 db_actual[destinatario].append({
                     "remitente": usuario_actual,
-                    "contenido_cifrado": mensaje_secreto
+                    "contenido_cifrado": secreto
                 })
-                
                 guardar_mensajes(db_actual)
-                st.success(f"🚀 ¡Mensaje cifrado guardado en el servidor para {destinatario}!")
-            else:
-                st.warning("⚠️ Escribe algo antes de presionar Enviar.")
+                st.success(f"🚀 ¡Jeroglífico enviado a {destinatario} y guardado en el servidor!")
 
-    # PESTAÑA 4: BANDEJA DE ENTRADA
+    # 4. BANDEJA DE ENTRADA
     with pestana4:
-        st.subheader("Tus Mensajes Recibidos")
-        # Leemos los datos directamente desde el archivo guardado en el servidor
+        st.subheader("Bandeja de Entrada Enigma")
         db_actual = cargar_mensajes()
         
         if usuario_actual in db_actual and len(db_actual[usuario_actual]) > 0:
             for i, msg in enumerate(db_actual[usuario_actual]):
-                with st.expander(f"✉️ Mensaje secreto de: {msg['remitente']} (Mensaje #{i+1})"):
-                    st.write("**Código encriptado recibido:**")
+                with st.expander(f"✉️ Códice secreto de: {msg['remitente']}"):
+                    st.write("**Jeroglíficos recibidos:**")
                     st.code(msg['contenido_cifrado'], language="text")
-                    
-                    if st.button(f"Descifrar Mensaje #{i+1}"):
-                        revelado = cifrar_texto(msg['contenido_cifrado'])
-                        st.info(f"💬 **El mensaje dice:** {revelado}")
+                    if st.button(f"Traducir Códice #{i+1}"):
+                        revelado = traducir_a_espanol(msg['contenido_cifrado'])
+                        st.info(f"💬 **Mensaje:** {revelado}")
         else:
-            st.write("No tienes ningún mensaje secreto en tu bandeja de entrada.")
+            st.write("No hay mensajes ocultos para ti en este momento.")
 
-    # --- BOTÓN DE CERRAR SESIÓN ---
+    # CERRAR SESIÓN
     st.write("---")
-    if st.button("🔒 Cerrar Sesión"):
+    if st.button("🔒 Bloquear Terminal"):
         st.session_state.enigma_usuario = None
-        st.success("Sesión cerrada correctamente.")
         st.rerun()
