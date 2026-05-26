@@ -32,10 +32,32 @@ JEROGLIFICOS = {
     "X": "⧖", "Y": "↟", "Z": "⟐"
 }
 
-# Crear el diccionario inverso automático para descifrar
-INVERSO_JEROGLIFICOS = {v: k for k, v in JEROGLIFICOS.items()}
+# Crear el diccionario inverso para descifrar analizando símbolos multicarácter (como "亗")
+def descifrar_palabra_bloque(palabra_cifrada):
+    texto_traducido = ""
+    i = 0
+    while i < len(palabra_cifrada):
+        # Caso especial para la M que lleva comillas '"亗"'
+        if palabra_cifrada[i:i+5] == '"亗"':
+            texto_traducido += "M"
+            i += 5
+        else:
+            encontrado = False
+            # Comprobamos el resto de símbolos del diccionario
+            for letra, simbolo in JEROGLIFICOS.items():
+                l_simb = len(simbolo)
+                if palabra_cifrada[i:i+l_simb] == simbolo:
+                    texto_traducido += letra
+                    i += l_simb
+                    encontrado = True
+                    break
+            if not encontrado:
+                # Si es un número o un carácter desconocido, lo dejamos pasar
+                texto_traducido += palabra_cifrada[i]
+                i += 1
+    return texto_traducido
 
-# --- NUEVO SISTEMA DE TRADUCCIÓN SIN ERRORES DE ESPACIOS ---
+# Funciones de traducción (Bloque compacto de palabras)
 def traducir_a_jeroglifico(texto):
     palabras = texto.upper().split(" ")
     palabras_cifradas = []
@@ -46,29 +68,21 @@ def traducir_a_jeroglifico(texto):
             if letra in JEROGLIFICOS:
                 letras_cifradas.append(JEROGLIFICOS[letra])
             else:
-                letras_cifradas.append(letra) # Por si meten números o signos
-        # Unimos las letras de la palabra con un espacio simple
-        palabras_cifradas.append(" ".join(letras_cifradas))
+                letras_cifradas.append(letra)
+        # JUNTAMOS las letras sin ningún espacio intermedio
+        palabras_cifradas.append("".join(letras_cifradas))
     
-    # Separamos las palabras completas con tres espacios para que visualmente se distingan bien
-    return "   ".join(palabras_cifradas)
+    # Separamos las palabras solo con un espacio normal
+    return " ".join(palabras_cifradas)
 
 def traducir_a_espanol(texto_cifrado):
-    # Detectamos los bloques de palabras separados por los tres espacios
-    palabras_cifradas = texto_cifrado.split("   ")
+    palabras_cifradas = texto_cifrado.split(" ")
     palabras_descifradas = []
     
     for palabra in palabras_cifradas:
-        # Cada letra está separada por un espacio simple
-        letras = palabra.split(" ")
-        letras_descifradas = []
-        for l in letras:
-            if l in INVERSO_JEROGLIFICOS:
-                letras_descifradas.append(INVERSO_JEROGLIFICOS[l])
-            elif l != "":
-                letras_descifradas.append(l)
-        palabras_descifradas.append("".join(letras_descifradas))
-    
+        if palabra != "":
+            palabras_descifradas.append(descifrar_palabra_bloque(palabra))
+            
     return " ".join(palabras_descifradas).strip()
 
 # 4. SISTEMA DE ALMACENAMIENTO PERMANENTE
@@ -164,9 +178,9 @@ else:
                 with st.expander(f"✉️ Códice secreto de: {msg['remitente']}"):
                     st.write("**Jeroglíficos recibidos:**")
                     st.code(msg['contenido_cifrado'], language="text")
-                    if st.button(f"Traducir Códice #{i+1}"):
-                        revelado = traducir_a_espanol(msg['contenido_cifrado'])
-                        st.info(f"💬 **Mensaje:** {revelado}")
+                    
+                    revelado = traducir_a_espanol(msg['contenido_cifrado'])
+                    st.write(f"💬 **Traducción automática:** `{revelado}`")
         else:
             st.write("No hay mensajes ocultos para ti en este momento.")
 
