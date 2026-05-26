@@ -26,19 +26,16 @@ CUENTAS_PIN = {
 # Lista limpia de usuarios para el filtro de administración
 CIUDADANOS = sorted([c for c in CUENTAS_PIN.keys() if c != "MAQUINA ENIGMA"])
 
-# 3. DICCIONARIO UNIVERSAL COMPLETO DE JEROGLÍFICOS O.I.M.C.
+# 3. DICCIONARIO UNIVERSAL DE JEROGLÍFICOS O.I.M.C. (Solo abecedario de la A a la Z)
 JEROGLIFICOS = {
     "A": "⭡", "B": "𝌇", "C": "亗", "D": "⨂", "E": "⩦", "F": "⎔", 
     "G": "▣", "H": "⫿", "I": "⁜", "J": "⧉", "K": "⋔", "L": "◬", 
     "M": '"亗"', "N": "⚡", "Ñ": "⛩", "O": "☉", "P": "⭧", "Q": "⿿", 
     "R": "♾", "S": "🜔", "T": "⏃", "U": "⊔", "V": "⪧", "W": "⎿", 
-    "X": "⧖", "Y": "↟", "Z": "⟐",
-    "0": "🜁", "1": "🜂", "2": "🜃", "3": "🜄", "4": "🜅", "5": "🜆",
-    "6": "🜇", "7": "🜈", "8": "🜉", "9": "🜊",
-    ".": "•", ",": " ", "?": "❓", "!": "❗", " ": "⚬"
+    "X": "⧖", "Y": "↟", "Z": "⟐"
 }
 
-# Lógica del lector de bloques pegados (¡Corregido el error de sintaxis de la foto!)
+# Lógica del lector de bloques pegados
 def descifrar_palabra_bloque(palabra_cifrada):
     texto_traducido = ""
     i = 0
@@ -243,40 +240,43 @@ else:
             st.write("---")
             st.html(html_informe)
 
-    # 7. PESTAÑA EXCLUSIVA: PANEL ADMIN ENIGMA MODIFICADO
+    # 7. PESTAÑA EXCLUSIVA: PANEL ADMIN ENIGMA (Tabla corregida de la A a la Z)
     if usuario_actual == "MAQUINA ENIGMA":
         with pestanas[6]:
             st.subheader("🛠️ Panel de Control de Inteligencia Suprema")
             
-            # DICCIONARIO COMPLETO VISIBLE
+            # DICCIONARIO MAESTRO REESTRUCTURADO (¡U-Z Corregidas y sin números!)
             st.markdown("### 📜 Idioma Cifrado - Diccionario Maestro O.I.M.C.")
+            st.write("Correspondencia oficial de caracteres (Abecedario A - Z):")
+            
+            # Generar tabla limpia de dos bloques equilibrados en Markdown
             tabla_md = "| Carácter | Jeroglífico | &nbsp;&nbsp;&nbsp;&nbsp; | Carácter | Jeroglífico |\n| :---: | :---: | :---: | :---: | :---: |\n"
             letras_lista = list(JEROGLIFICOS.items())
             mitad = (len(letras_lista) + 1) // 2
+            
             for idx in range(mitad):
                 l1, s1 = letras_lista[idx]
-                if l1 == " ": l1 = "Espacio [ ]"
                 col_extra = ""
                 if idx + mitad < len(letras_lista):
                     l2, s2 = letras_lista[idx + mitad]
-                    if l2 == " ": l2 = "Espacio [ ]"
                     col_extra = f"| {l2} | `{s2}` |"
                 else:
                     col_extra = "| | |"
                 tabla_md += f"| {l1} | `{s1}` | | {col_extra}\n"
+                
             st.markdown(tabla_md)
             st.write("---")
             
-            # AUDITORÍA DE USUARIOS INTERNA (FILTRADO POR CUENTA REAL)
+            # INTERCEPCIÓN DE COMUNICACIONES POR CUENTA REAL
             st.markdown("### 🗃️ Intercepción de Comunicaciones por Cuenta")
             user_select = st.selectbox("🎯 Elige la cuenta del ciudadano a espiar:", CIUDADANOS)
             st.write(f"Mostrando toda la actividad de la cuenta de: **{user_select}**")
             st.write("---")
             
-            db_actual = cargar_messages = cargar_mensajes()
+            db_actual = cargar_mensajes()
             cambio_hecho = False
             
-            # Recopilar e interceptar mensajes ENVIADOS por este usuario
+            # 1. MENSAJES ENVIADOS
             st.markdown("#### 📤 Mensajes Enviados por esta cuenta (A privados o Chat Grupal):")
             enviados = []
             for canal, lista_msg in db_actual.items():
@@ -309,7 +309,7 @@ else:
             
             st.write("---")
             
-            # Recopilar e interceptar mensajes RECIBIDOS por este usuario en su buzón privado
+            # 2. MENSAJES RECIBIDOS
             st.markdown("#### 📥 Mensajes Privados Recibidos por esta cuenta:")
             if user_select in db_actual and len(db_actual[user_select]) > 0:
                 for idx_m, msg in enumerate(db_actual[user_select]):
