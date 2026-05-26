@@ -114,7 +114,7 @@ else:
     st.subheader(f"Operador: {usuario_actual}")
     st.write("---")
 
-    # LAS 6 PESTAÑAS OFICIALES DE LA ALIANZA (¡Imprimir añadida!)
+    # LAS 6 PESTAÑAS OFICIALES
     pestana1, pestana2, pestana3, pestana4, pestana5, pestana6 = st.tabs([
         "🔑 Cifrar", 
         "🔓 Descifrar", 
@@ -174,7 +174,7 @@ else:
                 guardar_mensajes(db_actual)
                 st.success(f"🚀 ¡Mensaje transmitido con éxito con ID {id_formateado}!")
 
-    # 4. CHAT GRUPAL
+    # 4. CHAT GRUPAL (Sin desplegables y sin traducción automática)
     with pestana4:
         st.subheader("💬 Frecuencia General de la Alianza")
         db_actual = cargar_mensajes()
@@ -185,17 +185,14 @@ else:
                 id_msg = msg.get("id_mensaje", "0001")
                 remitente_msg = msg['remitente']
                 
-                titulo_grupal = f"📣 Mensaje de: {remitente_msg} / {fecha_msg} / {id_msg}"
-                with st.expander(titulo_grupal):
-                    st.write(f"**Códice cifrado de {remitente_msg}:**")
-                    st.code(msg['contenido_cifrado'], language="text")
-                    
-                    revelado = traducir_a_espanol(msg['contenido_cifrado'])
-                    st.write(f"💬 **Traducción automática:** `{revelado}`")
+                # Marco de diseño plano visible directamente
+                st.markdown(f"### 📣 Mensaje de: {remitente_msg} / {fecha_msg} / {id_msg}")
+                st.code(msg['contenido_cifrado'], language="text")
+                st.write("---")
         else:
             st.write("*El canal grupal está vacío en este momento.*")
 
-    # 5. BANDEJA PRIVADA
+    # 5. BANDEJA PRIVADA (Sin desplegables y sin traducción automática)
     with pestana5:
         st.subheader("🔒 Tus Mensajes Secretos Recibidos")
         db_actual = cargar_mensajes()
@@ -206,17 +203,14 @@ else:
                 id_msg = msg.get("id_mensaje", "0001")
                 remitente_msg = msg['remitente']
                 
-                titulo_privado = f"✉️ Códice secreto de: {remitente_msg} / {fecha_msg} / {id_msg}"
-                with st.expander(titulo_privado):
-                    st.write("**Jeroglíficos privados:**")
-                    st.code(msg['contenido_cifrado'], language="text")
-                    
-                    revelado = traducir_a_espanol(msg['contenido_cifrado'])
-                    st.write(f"💬 **Traducción automática:** `{revelado}`")
+                # Marco de diseño plano visible directamente
+                st.markdown(f"### ✉️ Códice secreto de: {remitente_msg} / {fecha_msg} / {id_msg}")
+                st.code(msg['contenido_cifrado'], language="text")
+                st.write("---")
         else:
             st.write("*No tienes códigos privados guardados.*")
 
-    # 6. PESTAÑA IMPRIMIR (¡Nueva!)
+    # 6. PESTAÑA IMPRIMIR
     with pestana6:
         st.subheader("🖨️ Generador de Informes Imprimibles (PDF)")
         st.write("Escribe o pega aquí el texto o jeroglíficos que quieras pasar a papel oficial.")
@@ -225,18 +219,15 @@ else:
         tipo_doc = st.radio("Formato del documento:", ["Códice Cifrado (Jeroglífico)", "Texto Desclasificado (Español)", "Mantener tal cual está escrito"])
         
         if texto_impresion:
-            # Procesar el texto según la opción elegida
             if tipo_doc == "Códice Cifrado (Jeroglífico)":
                 contenido_final = traducir_a_jeroglifico(texto_impresion)
             elif tipo_doc == "Texto Desclasificado (Español)":
-                # Si pegan jeroglíficos lo traduce, si es español se queda igual
                 contenido_final = traducir_a_espanol(texto_impresion) if any(s in texto_impresion for s in JEROGLIFICOS.values()) else texto_impresion
             else:
                 contenido_final = texto_impresion
                 
             fecha_doc = datetime.now().strftime("%d/%m/%Y - %H:%M")
             
-            # Crear una plantilla HTML profesional lista para imprimir en el navegador o guardar en PDF
             html_informe = f"""
             <div style="padding:20px; border:5px double #333; font-family:Courier New, monospace; background-color:#fff; color:#000; max-width:600px; margin:auto;">
                 <h2 style="text-align:center; margin-bottom:5px;">𓁺 ORDEN INTERNA MUNDIAL DE CIUDADANOS 𓁺</h2>
@@ -251,13 +242,10 @@ else:
                 <p style="text-align:center; font-size:11px; margin-top:30px;"><i>Cualquier copia no autorizada de este documento rúnico será castigada por el consejo O.I.M.C.</i></p>
             </div>
             """
-            
             st.write("---")
             st.write("**Vista Previa del Informe:**")
             st.html(html_informe)
-            
-            # Instrucciones de impresión directa
-            st.info("💡 **Para guardarlo en PDF o Imprimirlo:** Haz clic derecho en cualquier parte blanca de la página de arriba, dale a **Imprimir** (o pulsa `Ctrl + P`) y selecciona **Guardar como PDF** o tu impresora física.")
+            st.info("💡 **Para guardarlo en PDF o Imprimirlo:** Haz clic derecho en cualquier parte blanca de la página de arriba, dale a **Imprimir** (o pulsa `Ctrl + P`) y selecciona **Guardar como PDF**.")
 
     # CERRAR SESIÓN
     st.write("---")
