@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import os
+from datetime import datetime
 
 # 1. CONFIGURACIÓN DE LA PÁGINA
 st.set_page_config(page_title="Máquina Enigma O.I.M.C.", page_icon="𓁺", layout="centered")
@@ -32,18 +33,16 @@ JEROGLIFICOS = {
     "X": "⧖", "Y": "↟", "Z": "⟐"
 }
 
-# Crear el diccionario inverso para descifrar analizando símbolos multicarácter (como "亗")
+# Lógica del lector de bloques pegados
 def descifrar_palabra_bloque(palabra_cifrada):
     texto_traducido = ""
     i = 0
     while i < len(palabra_cifrada):
-        # Caso especial para la M que lleva comillas '"亗"'
         if palabra_cifrada[i:i+5] == '"亗"':
             texto_traducido += "M"
             i += 5
         else:
             encontrado = False
-            # Comprobamos el resto de símbolos del diccionario
             for letra, simbolo in JEROGLIFICOS.items():
                 l_simb = len(simbolo)
                 if palabra_cifrada[i:i+l_simb] == simbolo:
@@ -51,17 +50,14 @@ def descifrar_palabra_bloque(palabra_cifrada):
                     i += l_simb
                     encontrado = True
                     break
-            if not encontrado:
-                # Si es un número o un carácter desconocido, lo dejamos pasar
+            if not empty = encontrado:
                 texto_traducido += palabra_cifrada[i]
                 i += 1
     return texto_traducido
 
-# Funciones de traducción (Bloque compacto de palabras)
 def traducir_a_jeroglifico(texto):
     palabras = texto.upper().split(" ")
     palabras_cifradas = []
-    
     for palabra in palabras:
         letras_cifradas = []
         for letra in palabra:
@@ -69,20 +65,15 @@ def traducir_a_jeroglifico(texto):
                 letras_cifradas.append(JEROGLIFICOS[letra])
             else:
                 letras_cifradas.append(letra)
-        # JUNTAMOS las letras sin ningún espacio intermedio
         palabras_cifradas.append("".join(letras_cifradas))
-    
-    # Separamos las palabras solo con un espacio normal
     return " ".join(palabras_cifradas)
 
 def traducir_a_espanol(texto_cifrado):
     palabras_cifradas = texto_cifrado.split(" ")
     palabras_descifradas = []
-    
     for palabra in palabras_cifradas:
         if palabra != "":
             palabras_descifradas.append(descifrar_palabra_bloque(palabra))
-            
     return " ".join(palabras_descifradas).strip()
 
 # 4. SISTEMA DE ALMACENAMIENTO PERMANENTE
@@ -123,11 +114,13 @@ else:
     st.subheader(f"Operador: {usuario_actual}")
     st.write("---")
 
-    pestana1, pestana2, pestana3, pestana4 = st.tabs([
+    # LAS 5 PESTAÑAS OFICIALES DE LA ALIANZA
+    pestana1, pestana2, pestana3, pestana4, pestana5 = st.tabs([
         "🔑 Cifrar Mensaje", 
         "🔓 Descifrar Mensaje", 
         "🚀 Enviar Jeroglífico",
-        "📥 Bandeja de Entrada"
+        "💬 Chat Grupal",
+        "📥 Bandeja Privada"
     ])
 
     # 1. CIFRAR
@@ -148,10 +141,11 @@ else:
             st.write("**Texto Traducido al Español:**")
             st.code(descifrado, language="text")
 
-    # 3. ENVIAR
+    # 3. ENVIAR (Mensajes directos o canal grupal)
     with pestana3:
         st.subheader("Enviar Mensaje Encriptado")
-        opciones_destino = [c for c in CIUDADANOS if c != usuario_actual]
+        
+        opciones_destino = ["📢 TODA LA ALIANZA (Chat Grupal)"] + [c for c in CIUDADANOS if c != usuario_actual]
         destinatario = st.selectbox("Destinatario:", opciones_destino)
         mensaje_para_enviar = st.text_area("Escribe el mensaje en español:", key="enviar_input")
         
@@ -159,30 +153,68 @@ else:
             if mensaje_para_enviar:
                 secreto = traducir_a_jeroglifico(mensaje_para_enviar)
                 db_actual = cargar_mensajes()
-                if destinatario not in db_actual:
-                    db_actual[destinatario] = []
-                db_actual[destinatario].append({
+                fecha_hoy = datetime.now().strftime("%d/%m/%Y")
+                
+                clave_db = "GLOBAL" if destinatario == "📢 TODA LA ALIANZA (Chat Grupal)" else destinatario
+                
+                if clave_db not in db_actual:
+                    db_actual[clave_db] = []
+                
+                mensajes_de_hoy = [m for m in db_actual[clave_db] if m.get("fecha") == fecha_hoy]
+                nuevo_id_num = len(mensajes_de_hoy) + 1
+                id_formateado = f"{nuevo_id_num:04d}"
+                
+                db_actual[clave_db].append({
                     "remitente": usuario_actual,
-                    "contenido_cifrado": secreto
+                    "contenido_cifrado": secreto,
+                    "fecha": fecha_hoy,
+                    "id_mensaje": id_formateado
                 })
                 guardar_mensajes(db_actual)
-                st.success(f"🚀 ¡Jeroglífico enviado a {destinatario} y guardado en el servidor!")
+                st.success(f"🚀 ¡Mensaje transmitido con éxito con ID {id_formateado}!")
 
-    # 4. BANDEJA DE ENTRADA
+    # 4. CHAT GRUPAL (Nueva sección exclusiva)
     with pestana4:
-        st.subheader("Bandeja de Entrada Enigma")
+        st.subheader("💬 Frecuencia General de la Alianza")
         db_actual = cargar_mensajes()
         
-        if usuario_actual in db_actual and len(db_actual[usuario_actual]) > 0:
-            for i, msg in enumerate(db_actual[usuario_actual]):
-                with st.expander(f"✉️ Códice secreto de: {msg['remitente']}"):
-                    st.write("**Jeroglíficos recibidos:**")
+        if "GLOBAL" in db_actual and len(db_actual["GLOBAL"]) > 0:
+            for msg in db_actual["GLOBAL"]:
+                fecha_msg = msg.get("fecha", datetime.now().strftime("%d/%m/%Y"))
+                id_msg = msg.get("id_mensaje", "0001")
+                remitente_msg = msg['remitente']
+                
+                # Encabezado limpio con barras / mostrando el autor claramente arriba
+                titulo_grupal = f"📣 Mensaje de: {remitente_msg} / {fecha_msg} / {id_msg}"
+                with st.expander(titulo_grupal):
+                    st.write(f"**Códice cifrado de {remitente_msg}:**")
                     st.code(msg['contenido_cifrado'], language="text")
                     
                     revelado = traducir_a_espanol(msg['contenido_cifrado'])
                     st.write(f"💬 **Traducción automática:** `{revelado}`")
         else:
-            st.write("No hay mensajes ocultos para ti en este momento.")
+            st.write("*El canal grupal está vacío en este momento. ¡Sé el primero en transmitir un informe!*")
+
+    # 5. BANDEJA PRIVADA
+    with pestana5:
+        st.subheader("🔒 Tus Mensajes Secretos Recibidos")
+        db_actual = cargar_mensajes()
+        
+        if usuario_actual in db_actual and len(db_actual[usuario_actual]) > 0:
+            for msg in db_actual[usuario_actual]:
+                fecha_msg = msg.get("fecha", datetime.now().strftime("%d/%m/%Y"))
+                id_msg = msg.get("id_mensaje", "0001")
+                remitente_msg = msg['remitente']
+                
+                titulo_privado = f"✉️ Códice secreto de: {remitente_msg} / {fecha_msg} / {id_msg}"
+                with st.expander(titulo_privado):
+                    st.write("**Jeroglíficos privados:**")
+                    st.code(msg['contenido_cifrado'], language="text")
+                    
+                    revelado = traducir_a_espanol(msg['contenido_cifrado'])
+                    st.write(f"💬 **Traducción automática:** `{revelado}`")
+        else:
+            st.write("*No tienes códigos privados guardados en tu terminal.*")
 
     # CERRAR SESIÓN
     st.write("---")
