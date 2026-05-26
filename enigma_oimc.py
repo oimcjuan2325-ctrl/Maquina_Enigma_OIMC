@@ -7,6 +7,7 @@ from datetime import datetime
 st.set_page_config(page_title="Máquina Enigma O.I.M.C.", layout="wide")
 DB_MENSAJES = "enigma_mensajes.json"
 
+# Diccionario Maestro (A-Z + Ñ)
 JEROGLIFICOS = {
     "A": "⭡", "B": "𝌇", "C": "亗", "D": "⨂", "E": "⩦", "F": "⎔", "G": "▣", "H": "⫿", 
     "I": "⁜", "J": "⧉", "K": "⋔", "L": "◬", "M": '"亗"', "N": "⚡", "Ñ": "⛩", 
@@ -16,7 +17,7 @@ JEROGLIFICOS = {
 
 CUENTAS = ["Juan", "Asier", "Jesús", "Yolanda", "Mikel", "Gaizka", "Iñaki", "Erika", "Nahia", "Amets"]
 CUENTAS_PIN = {"MAQUINA ENIGMA": "2325"}
-for c in CUENTAS: CUENTAS_PIN[c] = "0000" # Ajusta tus PINs aquí
+for c in CUENTAS: CUENTAS_PIN[c] = "0000"
 
 def cargar_db():
     if not os.path.exists(DB_MENSAJES): return {"mensajes": []}
@@ -57,24 +58,54 @@ else:
     if u == "MAQUINA ENIGMA": tabs.append("🛠️ Admin")
     pestanas = st.tabs(tabs)
 
-    # ... (Cifrar, Descifrar, Enviar, Chat, Recibidos, Imprimir funcionan igual)
+    with pestanas[0]:
+        t = st.text_area("Texto a cifrar:")
+        if t: st.code(traducir(t, "cifrar"))
+    with pestanas[1]:
+        t = st.text_area("Jeroglífico a descifrar:")
+        if t: st.code(traducir(t, "descifrar"))
+    with pestanas[2]:
+        dest = st.selectbox("Destinatario:", ["CHAT GRUPAL"] + CUENTAS)
+        msg = st.text_input("Mensaje:")
+        if st.button("Transmitir"):
+            db = cargar_db()
+            f = datetime.now().strftime("%d/%m/%Y")
+            ids = len([m for m in db["mensajes"] if m["fecha"] == f]) + 1
+            db["mensajes"].append({"de": u, "a": dest, "msg": traducir(msg, "cifrar"), "fecha": f, "id": f"{ids:03d}"})
+            guardar_db(db)
+            st.success("Transmitido.")
+    with pestanas[3]:
+        db = cargar_db()
+        m_g = [m for m in db["mensajes"] if m["a"] == "CHAT GRUPAL"]
+        if not m_g: st.info("De momento no se ha escrito ningún mensaje.")
+        else:
+            for m in m_g: st.markdown(f"**{m['de']}** ({m['fecha']} | ID:{m['id']}): `{m['msg']}`")
+    with pestanas[4]:
+        db = cargar_db()
+        m_r = [m for m in db["mensajes"] if m["a"] == u]
+        if not m_r: st.info("De momento no has recibido ningún mensaje.")
+        else:
+            for m in m_r: st.markdown(f"**De {m['de']}** ({m['fecha']} | ID:{m['id']}): `{m['msg']}`")
+    with pestanas[5]:
+        t_imp = st.text_area("Texto a imprimir:")
+        if st.button("Generar documento"):
+            st.write("### Sello: O.I.M.C.")
+            st.code(t_imp)
     
     if u == "MAQUINA ENIGMA":
         with pestanas[-1]:
             st.subheader("🛠️ Auditoría de Inteligencia")
-            sel_user = st.selectbox("Seleccionar cuenta a auditar:", CUENTAS)
+            sel_user = st.selectbox("Auditar cuenta:", CUENTAS)
             db = cargar_db()
-            
-            c1, c2 = st.columns(2)
-            with c1:
+            col1, col2 = st.columns(2)
+            with col1:
                 st.write("#### 📤 Enviados")
                 for m in [m for m in db["mensajes"] if m["de"] == sel_user]:
-                    st.write(f"Para: {m['a']} | ID: {m['id']} | `{m['msg']}`")
-            with c2:
+                    st.write(f"Para: {m['a']} | `{m['msg']}`")
+            with col2:
                 st.write("#### 📥 Recibidos")
                 for m in [m for m in db["mensajes"] if m["a"] == sel_user]:
-                    st.write(f"De: {m['de']} | ID: {m['id']} | `{m['msg']}`")
-
+                    st.write(f"De: {m['de']} | `{m['msg']}`")
             st.markdown("### 📜 Abecedario Universal")
             letras = list(JEROGLIFICOS.keys())
             tabla = "| Carácter | Jeroglífico | | Carácter | Jeroglífico |\n|:---:|:---:|:---:|:---:|:---:|\n"
