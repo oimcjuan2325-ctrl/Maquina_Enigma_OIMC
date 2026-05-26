@@ -8,8 +8,9 @@ st.set_page_config(page_title="Máquina Enigma O.I.M.C.", page_icon="𓁺", layo
 
 DB_MENSAJES = "enigma_mensajes.json"
 
-# 2. BASE DE DATOS DE CUENTAS Y PINES OFICIALES
+# 2. BASE DE DATOS DE CUENTAS Y PINES OFICIALES (¡Nueva cuenta admin añadida!)
 CUENTAS_PIN = {
+    "MAQUINA ENIGMA": "2325",  # Cuenta Administrador Supremo
     "Juan": "2313",
     "Asier": "2021",
     "Jesús": "1365",
@@ -22,7 +23,7 @@ CUENTAS_PIN = {
     "Amets": "1053"
 }
 
-CIUDADANOS = sorted(list(CUENTAS_PIN.keys()))
+CIUDADANOS = sorted([c for c in CUENTAS_PIN.keys() if c != "MAQUINA ENIGMA"])
 
 # 3. DICCIONARIO UNIVERSAL DE JEROGLÍFICOS O.I.M.C.
 JEROGLIFICOS = {
@@ -111,21 +112,18 @@ if st.session_state.enigma_usuario is None:
 else:
     usuario_actual = st.session_state.enigma_usuario
     st.title("𓁺 Protocolo de Cifrado Jeroglífico")
-    st.subheader(f"Operador: {usuario_actual}")
+    st.subheader(f"Operador: {usuario_actual} {'👑 [ADMINISTADOR]' if usuario_actual == 'MAQUINA ENIGMA' else ''}")
     st.write("---")
 
-    # LAS 6 PESTAÑAS OFICIALES
-    pestana1, pestana2, pestana3, pestana4, pestana5, pestana6 = st.tabs([
-        "🔑 Cifrar", 
-        "🔓 Descifrar", 
-        "🚀 Enviar",
-        "💬 Chat Grupal",
-        "📥 Bandeja Privada",
-        "🖨️ Imprimir"
-    ])
+    # Configuración dinámica de pestañas dependiendo de si eres Admin o no
+    lista_pestanas = ["🔑 Cifrar", "🔓 Descifrar", "🚀 Enviar", "💬 Chat Grupal", "📥 Bandeja Privada", "🖨️ Imprimir"]
+    if usuario_actual == "MAQUINA ENIGMA":
+        lista_pestanas.append("🛠️ Panel Admin")
+        
+    pestanas = st.tabs(lista_pestanas)
 
     # 1. CIFRAR
-    with pestana1:
+    with pestanas[0]:
         st.subheader("Convertir Español a Jeroglífico O.I.M.C.")
         texto_a_cifrar = st.text_area("Escribe en español:", key="cifrar_input")
         if texto_a_cifrar:
@@ -134,7 +132,7 @@ else:
             st.code(cifrado, language="text")
 
     # 2. DESCIFRAR
-    with pestana2:
+    with pestanas[1]:
         st.subheader("Descifrar Jeroglífico")
         texto_a_descifrar = st.text_area("Pega los jeroglíficos aquí:", key="descifrar_input")
         if texto_a_descifrar:
@@ -143,10 +141,10 @@ else:
             st.code(descifrado, language="text")
 
     # 3. ENVIAR
-    with pestana3:
+    with pestanas[2]:
         st.subheader("Enviar Mensaje Encriptado")
         
-        opciones_destino = ["📢 TODA LA ALIANZA (Chat Grupal)"] + [c for c in CIUDADANOS if c != usuario_actual]
+        opciones_destino = ["📢 TODA LA ALIANZA (Chat Grupal)"] + [c for c in CIUDADANOS]
         destinatario = st.selectbox("Destinatario:", opciones_destino)
         mensaje_para_enviar = st.text_area("Escribe el mensaje en español:", key="enviar_input")
         
@@ -174,8 +172,8 @@ else:
                 guardar_mensajes(db_actual)
                 st.success(f"🚀 ¡Mensaje transmitido con éxito con ID {id_formateado}!")
 
-    # 4. CHAT GRUPAL (Sin desplegables y sin traducción automática)
-    with pestana4:
+    # 4. CHAT GRUPAL
+    with pestanas[3]:
         st.subheader("💬 Frecuencia General de la Alianza")
         db_actual = cargar_mensajes()
         
@@ -185,15 +183,14 @@ else:
                 id_msg = msg.get("id_mensaje", "0001")
                 remitente_msg = msg['remitente']
                 
-                # Marco de diseño plano visible directamente
                 st.markdown(f"### 📣 Mensaje de: {remitente_msg} / {fecha_msg} / {id_msg}")
                 st.code(msg['contenido_cifrado'], language="text")
                 st.write("---")
         else:
             st.write("*El canal grupal está vacío en este momento.*")
 
-    # 5. BANDEJA PRIVADA (Sin desplegables y sin traducción automática)
-    with pestana5:
+    # 5. BANDEJA PRIVADA
+    with pestanas[4]:
         st.subheader("🔒 Tus Mensajes Secretos Recibidos")
         db_actual = cargar_mensajes()
         
@@ -203,7 +200,6 @@ else:
                 id_msg = msg.get("id_mensaje", "0001")
                 remitente_msg = msg['remitente']
                 
-                # Marco de diseño plano visible directamente
                 st.markdown(f"### ✉️ Códice secreto de: {remitente_msg} / {fecha_msg} / {id_msg}")
                 st.code(msg['contenido_cifrado'], language="text")
                 st.write("---")
@@ -211,7 +207,7 @@ else:
             st.write("*No tienes códigos privados guardados.*")
 
     # 6. PESTAÑA IMPRIMIR
-    with pestana6:
+    with pestanas[5]:
         st.subheader("🖨️ Generador de Informes Imprimibles (PDF)")
         st.write("Escribe o pega aquí el texto o jeroglíficos que quieras pasar a papel oficial.")
         
@@ -246,6 +242,70 @@ else:
             st.write("**Vista Previa del Informe:**")
             st.html(html_informe)
             st.info("💡 **Para guardarlo en PDF o Imprimirlo:** Haz clic derecho en cualquier parte blanca de la página de arriba, dale a **Imprimir** (o pulsa `Ctrl + P`) y selecciona **Guardar como PDF**.")
+
+    # 7. PESTAÑA EXCLUSIVA: PANEL ADMIN (Solo visible para MAQUINA ENIGMA)
+    if usuario_actual == "MAQUINA ENIGMA":
+        with pestanas[6]:
+            st.subheader("🛠️ Panel de Control de Inteligencia Suprema")
+            
+            # --- SUBSECCIÓN A: EL ABECEDARIO DE JEROGLÍFICOS ---
+            st.markdown("### 📜 Idioma Cifrado - Diccionario Maestro O.I.M.C.")
+            st.write("Tabla completa de correspondencia de caracteres:")
+            
+            # Formatear el diccionario en columnas bonitas de Markdown
+            tabla_md = "| Letra | Jeroglífico | &nbsp;&nbsp;&nbsp;&nbsp; | Letra | Jeroglífico |\n| :---: | :---: | :---: | :---: | :---: |\n"
+            letras_lista = list(JEROGLIFICOS.items())
+            mitad = (len(letras_lista) + 1) // 2
+            for idx in range(mitad):
+                l1, s1 = letras_lista[idx]
+                col_extra = ""
+                if idx + mitad < len(letras_lista):
+                    l2, s2 = letras_lista[idx + mitad]
+                    col_extra = f"| {l2} | `{s2}` |"
+                else:
+                    col_extra = "| | |"
+                tabla_md += f"| {l1} | `{s1}` | | {col_extra}\n"
+            st.markdown(tabla_md)
+            st.write("---")
+            
+            # --- SUBSECCIÓN B: CONTROL TOTAL DE HISTORIAL Y BORRADO ---
+            st.markdown("### 🗃️ Auditoría General de Mensajes del Servidor")
+            db_actual = cargar_mensajes()
+            cambio_hecho = False
+            
+            if not db_actual:
+                st.write("*La base de datos está completamente vacía.*")
+            else:
+                for canal, lista_msg in list(db_actual.items()):
+                    st.markdown(f"#### Canal de Almacenamiento: `{canal}`")
+                    if not lista_msg:
+                        st.write("*Canal vacío.*")
+                        continue
+                        
+                    for idx_m, msg in enumerate(lista_msg):
+                        f_m = msg.get("fecha", "---")
+                        id_m = msg.get("id_mensaje", "---")
+                        rem_m = msg.get("remitente", "---")
+                        cif_m = msg.get("contenido_cifrado", "")
+                        
+                        col_info, col_boton = st.columns([5, 1])
+                        with col_info:
+                            st.write(f"🔹 **De:** {rem_m} | **ID:** {id_m} | **Fecha:** {f_m}")
+                            st.code(cif_m, language="text")
+                        with col_boton:
+                            # Botón con una clave única para evitar conflictos en Streamlit
+                            if st.button("🗑️ Eliminar", key=f"del_{canal}_{idx_m}_{id_m}"):
+                                db_actual[canal].pop(idx_m)
+                                # Si el canal se queda vacío, limpiarlo
+                                if not db_actual[canal]:
+                                    del db_actual[canal]
+                                guardar_mensajes(db_actual)
+                                cambio_hecho = True
+                                st.success("¡Mensaje destruído!")
+                    st.write("---")
+                    
+                if cambio_hecho:
+                    st.rerun()
 
     # CERRAR SESIÓN
     st.write("---")
