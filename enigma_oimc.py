@@ -3,9 +3,8 @@ import json
 import os
 from datetime import datetime
 
-# 1. CONFIGURACIÓN VISUAL
-st.set_page_config(page_title="Máquina Enigma O.I.M.C.", page_icon="𓁺", layout="centered")
-
+# 1. CONFIGURACIÓN
+st.set_page_config(page_title="Máquina Enigma O.I.M.C.", layout="wide")
 DB_MENSAJES = "enigma_mensajes.json"
 
 JEROGLIFICOS = {
@@ -15,7 +14,13 @@ JEROGLIFICOS = {
     "V": "⪧", "W": "⎿", "X": "⧖", "Y": "↟", "Z": "⟐"
 }
 
-# --- FUNCIONES DE BASE DE DATOS ---
+CUENTAS_PIN = {
+    "MAQUINA ENIGMA": "2325", "Juan": "2313", "Asier": "2021", "Jesús": "1365", 
+    "Yolanda": "1460", "Mikel": "2013", "Gaizka": "9837", "Iñaki": "7467", 
+    "Erika": "7562", "Nahia": "9786", "Amets": "1053"
+}
+
+# --- FUNCIONES ---
 def cargar_db():
     if not os.path.exists(DB_MENSAJES): return {"mensajes": []}
     try:
@@ -28,14 +33,12 @@ def guardar_db(db):
     with open(DB_MENSAJES, "w", encoding="utf-8") as f: json.dump(db, f, ensure_ascii=False)
 
 def traducir(texto, tipo="cifrar"):
-    if tipo == "cifrar":
-        return "".join([JEROGLIFICOS.get(l, l) for l in texto.upper()])
-    else:
-        res = texto.upper()
-        for l, s in JEROGLIFICOS.items(): res = res.replace(s, l)
-        return res
+    if tipo == "cifrar": return "".join([JEROGLIFICOS.get(l, l) for l in texto.upper()])
+    res = texto.upper()
+    for l, s in JEROGLIFICOS.items(): res = res.replace(s, l)
+    return res
 
-# --- INTERFAZ ---
+# --- SESIÓN ---
 if "usuario" not in st.session_state: st.session_state.usuario = None
 
 if not st.session_state.usuario:
@@ -43,14 +46,19 @@ if not st.session_state.usuario:
     u = st.text_input("Nombre:")
     p = st.text_input("PIN:", type="password")
     if st.button("Activar"):
-        if u in ["MAQUINA ENIGMA", "Juan", "Asier", "Jesús", "Yolanda", "Mikel", "Gaizka", "Iñaki", "Erika", "Nahia", "Amets"]:
+        if u in CUENTAS_PIN and CUENTAS_PIN[u] == p:
             st.session_state.usuario = u
             st.rerun()
 else:
     u = st.session_state.usuario
-    st.header(f"Operador: {u}")
-    
-    pestanas = st.tabs(["🔑 Cifrar", "🔓 Descifrar", "🚀 Enviar", "💬 Chat", "🖨️ Imprimir"] + (["🛠️ Admin"] if u == "MAQUINA ENIGMA" else []))
+    st.sidebar.header(f"Operador: {u}")
+    if st.sidebar.button("🔒 Cerrar Sesión"):
+        st.session_state.usuario = None
+        st.rerun()
+
+    tabs = ["🔑 Cifrar", "🔓 Descifrar", "🚀 Enviar", "💬 Chat Grupal", "📥 Recibidos", "🖨️ Imprimir"]
+    if u == "MAQUINA ENIGMA": tabs.append("🛠️ Admin")
+    pestanas = st.tabs(tabs)
 
     with pestanas[0]:
         t = st.text_area("Texto a cifrar:")
@@ -61,7 +69,7 @@ else:
         if t: st.code(traducir(t, "descifrar"))
 
     with pestanas[2]:
-        dest = st.selectbox("Destino:", ["CHAT GRUPAL"] + ["Juan", "Asier", "Jesús", "Yolanda", "Mikel", "Gaizka", "Iñaki", "Erika", "Nahia", "Amets"])
+        dest = st.selectbox("Destino:", ["CHAT GRUPAL"] + [c for c in CUENTAS_PIN if c != u])
         msg = st.text_input("Mensaje:")
         if st.button("Transmitir"):
             db = cargar_db()
@@ -69,18 +77,35 @@ else:
             ids = len([m for m in db["mensajes"] if m["fecha"] == f]) + 1
             db["mensajes"].append({"de": u, "a": dest, "msg": traducir(msg, "cifrar"), "fecha": f, "id": f"{ids:03d}"})
             guardar_db(db)
-            st.success("Transmitido con ID " + f"{ids:03d}")
+            st.success("Transmitido.")
 
     with pestanas[3]:
         db = cargar_db()
-        for m in db["mensajes"]:
-            st.markdown(f"**{m['de']}** ({m['fecha']} | ID:{m['id']}): `{m['msg']}`")
+        mensajes_grupo = [m for m in db["mensajes"] if m["a"] == "CHAT GRUPAL"]
+        if not mensajes_grupo: st.info("De momento no se ha escrito ningún mensaje.")
+        else:
+            for m in mensajes_grupo:
+                st.markdown(f"**{m['de']}** ({m['fecha']} | ID:{m['id']}): `{m['msg']}`")
+
+    with pestanas[4]:
+        db = cargar_db()
+        recibidos = [m for m in db["mensajes"] if m["a"] == u]
+        if not recibidos: st.info("De momento no has recibido ningún mensaje.")
+        else:
+            for m in recibidos:
+                st.markdown(f"**De {m['de']}** ({m['fecha']} | ID:{m['id']}): `{m['msg']}`")
+
+    with pestanas[5]:
+        t_imp = st.text_area("Texto para imprimir:")
+        if st.button("Generar documento"):
+            st.markdown("---")
+            st.write("### Sello de la Alianza: O.I.M.C.")
+            st.code(t_imp)
+            st.success("Documento listo para imprimir (usa Ctrl+P).")
 
     if u == "MAQUINA ENIGMA":
         with pestanas[-1]:
             st.subheader("🛠️ Panel de Administración")
-            # TABLA BLINDADA
-            st.markdown("### 📜 Abecedario de Cifrado Universal")
             letras = list(JEROGLIFICOS.keys())
             tabla = "| Carácter | Jeroglífico | | Carácter | Jeroglífico |\n|:---:|:---:|:---:|:---:|:---:|\n"
             for i in range(13):
