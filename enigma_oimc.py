@@ -21,65 +21,55 @@ CUENTAS_PIN = {
     "Amets": "1053"
 }
 
-# Lista ordenada de ciudadanos
 CIUDADANOS = sorted(list(CUENTAS_PIN.keys()))
 
-# 3. DICCIONARIO UNIVERSAL DE JEROGLÍFICOS O.I.M.C. (¡TODAS LAS LETRAS COMPROBADAS!)
+# 3. DICCIONARIO UNIVERSAL DE JEROGLÍFICOS O.I.M.C.
 JEROGLIFICOS = {
-    "A": "⭡", 
-    "B": "𝌇", 
-    "C": "亗", 
-    "D": "⨂", 
-    "E": "⩦", 
-    "F": "⎔", 
-    "G": "▣", 
-    "H": "⫿", 
-    "I": "⁜", 
-    "J": "⧉", 
-    "K": "⋔", 
-    "L": "◬", 
-    "M": '"亗"', 
-    "N": "⚡", 
-    "Ñ": "⛩", 
-    "O": "☉", 
-    "P": "⭧", 
-    "Q": "⿿", 
-    "R": "♾", 
-    "S": "🜔", 
-    "T": "⏃", 
-    "U": "⊔", 
-    "V": "⪧", 
-    "W": "⎿", 
-    "X": "⧖", 
-    "Y": "↟", 
-    "Z": "⟐", 
-    " ": "  "
+    "A": "⭡", "B": "𝌇", "C": "亗", "D": "⨂", "E": "⩦", "F": "⎔", 
+    "G": "▣", "H": "⫿", "I": "⁜", "J": "⧉", "K": "⋔", "L": "◬", 
+    "M": '"亗"', "N": "⚡", "Ñ": "⛩", "O": "☉", "P": "⭧", "Q": "⿿", 
+    "R": "♾", "S": "🜔", "T": "⏃", "U": "⊔", "V": "⪧", "W": "⎿", 
+    "X": "⧖", "Y": "↟", "Z": "⟐"
 }
 
 # Crear el diccionario inverso automático para descifrar
-INVERSO_JEROGLIFICOS = {v: k for k, v in JEROGLIFICOS.items() if k != " "}
+INVERSO_JEROGLIFICOS = {v: k for k, v in JEROGLIFICOS.items()}
 
-# Funciones de traducción
+# --- NUEVO SISTEMA DE TRADUCCIÓN SIN ERRORES DE ESPACIOS ---
 def traducir_a_jeroglifico(texto):
-    resultado = []
-    for letra in texto.upper():
-        if letra in JEROGLIFICOS:
-            resultado.append(JEROGLIFICOS[letra])
-        else:
-            resultado.append(letra)
-    return " ".join(resultado)
+    palabras = texto.upper().split(" ")
+    palabras_cifradas = []
+    
+    for palabra in palabras:
+        letras_cifradas = []
+        for letra in palabra:
+            if letra in JEROGLIFICOS:
+                letras_cifradas.append(JEROGLIFICOS[letra])
+            else:
+                letras_cifradas.append(letra) # Por si meten números o signos
+        # Unimos las letras de la palabra con un espacio simple
+        palabras_cifradas.append(" ".join(letras_cifradas))
+    
+    # Separamos las palabras completas con tres espacios para que visualmente se distingan bien
+    return "   ".join(palabras_cifradas)
 
 def traducir_a_espanol(texto_cifrado):
-    simbolos = texto_cifrado.split(" ")
-    resultado = []
-    for s in simbolos:
-        if s in INVERSO_JEROGLIFICOS:
-            resultado.append(INVERSO_JEROGLIFICOS[s])
-        elif s == "":
-            resultado.append(" ")
-        else:
-            resultado.append(s)
-    return "".join(resultado).replace("  ", " ")
+    # Detectamos los bloques de palabras separados por los tres espacios
+    palabras_cifradas = texto_cifrado.split("   ")
+    palabras_descifradas = []
+    
+    for palabra in palabras_cifradas:
+        # Cada letra está separada por un espacio simple
+        letras = palabra.split(" ")
+        letras_descifradas = []
+        for l in letras:
+            if l in INVERSO_JEROGLIFICOS:
+                letras_descifradas.append(INVERSO_JEROGLIFICOS[l])
+            elif l != "":
+                letras_descifradas.append(l)
+        palabras_descifradas.append("".join(letras_descifradas))
+    
+    return " ".join(palabras_descifradas).strip()
 
 # 4. SISTEMA DE ALMACENAMIENTO PERMANENTE
 def cargar_mensajes():
@@ -132,7 +122,7 @@ else:
         texto_a_cifrar = st.text_area("Escribe en español:", key="cifrar_input")
         if texto_a_cifrar:
             cifrado = traducir_a_jeroglifico(texto_a_cifrar)
-            st.write("**Código Jeroglífico generado (puedes copiarlo):**")
+            st.write("**Código Jeroglífico generado:**")
             st.code(cifrado, language="text")
 
     # 2. DESCIFRAR
