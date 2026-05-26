@@ -240,17 +240,17 @@ else:
             st.write("---")
             st.html(html_informe)
 
-    # 7. PESTAÑA EXCLUSIVA: PANEL ADMIN ENIGMA (Tabla corregida de la A a la Z)
+    # 7. PESTAÑA EXCLUSIVA: PANEL ADMIN ENIGMA
     if usuario_actual == "MAQUINA ENIGMA":
         with pestanas[6]:
             st.subheader("🛠️ Panel de Control de Inteligencia Suprema")
             
-            # DICCIONARIO MAESTRO REESTRUCTURADO (¡U-Z Corregidas y sin números!)
+            # DICCIONARIO MAESTRO REESTRUCTURADO POR COLUMNAS REALES
             st.markdown("### 📜 Idioma Cifrado - Diccionario Maestro O.I.M.C.")
             st.write("Correspondencia oficial de caracteres (Abecedario A - Z):")
             
-            # Generar tabla limpia de dos bloques equilibrados en Markdown
-            tabla_md = "| Carácter | Jeroglífico | &nbsp;&nbsp;&nbsp;&nbsp; | Carácter | Jeroglífico |\n| :---: | :---: | :---: | :---: | :---: |\n"
+            # Creamos la tabla asegurando que el carácter y su jeroglífico vayan siempre emparejados
+            tabla_md = "| Carácter | Jeroglífico | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Carácter | Jeroglífico |\n| :---: | :---: | :---: | :---: | :---: |\n"
             letras_lista = list(JEROGLIFICOS.items())
             mitad = (len(letras_lista) + 1) // 2
             
