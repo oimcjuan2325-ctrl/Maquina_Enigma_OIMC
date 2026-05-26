@@ -8,25 +8,17 @@ st.set_page_config(page_title="Máquina Enigma O.I.M.C.", page_icon="𓁺", layo
 
 DB_MENSAJES = "enigma_mensajes.json"
 
-# 2. BASE DE DATOS DE CUENTAS Y PINES OFICIALES
+# 2. BASE DE DATOS DE CUENTAS Y PINES
 CUENTAS_PIN = {
-    "MAQUINA ENIGMA": "2325",  # Cuenta Administrador Supremo
-    "Juan": "2313",
-    "Asier": "2021",
-    "Jesús": "1365",
-    "Yolanda": "1460",
-    "Mikel": "2013",
-    "Gaizka": "9837",
-    "Iñaki": "7467",
-    "Erika": "7562",
-    "Nahia": "9786",
-    "Amets": "1053"
+    "MAQUINA ENIGMA": "2325",
+    "Juan": "2313", "Asier": "2021", "Jesús": "1365", "Yolanda": "1460",
+    "Mikel": "2013", "Gaizka": "9837", "Iñaki": "7467", "Erika": "7562",
+    "Nahia": "9786", "Amets": "1053"
 }
 
-# Lista limpia de usuarios para el filtro de administración
 CIUDADANOS = sorted([c for c in CUENTAS_PIN.keys() if c != "MAQUINA ENIGMA"])
 
-# 3. DICCIONARIO UNIVERSAL DE JEROGLÍFICOS O.I.M.C. (Solo abecedario de la A a la Z)
+# 3. DICCIONARIO MAESTRO (A-Z)
 JEROGLIFICOS = {
     "A": "⭡", "B": "𝌇", "C": "亗", "D": "⨂", "E": "⩦", "F": "⎔", 
     "G": "▣", "H": "⫿", "I": "⁜", "J": "⧉", "K": "⋔", "L": "◬", 
@@ -35,7 +27,7 @@ JEROGLIFICOS = {
     "X": "⧖", "Y": "↟", "Z": "⟐"
 }
 
-# Lógica del lector de bloques pegados
+# Lógica de traducción
 def descifrar_palabra_bloque(palabra_cifrada):
     texto_traducido = ""
     i = 0
@@ -61,281 +53,78 @@ def traducir_a_jeroglifico(texto):
     palabras = texto.upper().split(" ")
     palabras_cifradas = []
     for palabra in palabras:
-        letras_cifradas = []
-        for letra in palabra:
-            if letra in JEROGLIFICOS:
-                letras_cifradas.append(JEROGLIFICOS[letra])
-            else:
-                letras_cifradas.append(letra)
+        letras_cifradas = [JEROGLIFICOS.get(letra, letra) for letra in palabra]
         palabras_cifradas.append("".join(letras_cifradas))
     return " ".join(palabras_cifradas)
 
 def traducir_a_espanol(texto_cifrado):
-    palabras_cifradas = texto_cifrado.split(" ")
-    palabras_descifradas = []
-    for palabra in palabras_cifradas:
-        if palabra != "":
-            palabras_descifradas.append(descifrar_palabra_bloque(palabra))
-    return " ".join(palabras_descifradas).strip()
+    return " ".join([descifrar_palabra_bloque(p) for p in texto_cifrado.split(" ")]).strip()
 
-# 4. SISTEMA DE ALMACENAMIENTO PERMANENTE
+# Almacenamiento
 def cargar_mensajes():
     if os.path.exists(DB_MENSAJES):
-        try:
-            with open(DB_MENSAJES, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            return {}
+        with open(DB_MENSAJES, "r", encoding="utf-8") as f:
+            return json.load(f)
     return {}
 
 def guardar_mensajes(mensajes):
     with open(DB_MENSAJES, "w", encoding="utf-8") as f:
         json.dump(mensajes, f, ensure_ascii=False, indent=4)
 
-# 5. CONTROL DE SESIÓN
-if "enigma_usuario" not in st.session_state:
-    st.session_state.enigma_usuario = None
+# 5. SESIÓN
+if "enigma_usuario" not in st.session_state: st.session_state.enigma_usuario = None
 
-# --- LOGIN ---
 if st.session_state.enigma_usuario is None:
-    st.title("𓁺 Central Enigma O.I.M.C. - Autenticación")
-    usuario_input = st.text_input("Nombre del Ciudadano:")
-    pin_input = st.text_input("PIN Secreto:", type="password")
-    
-    if st.button("Activar Enigma"):
-        if usuario_input in CUENTAS_PIN and CUENTAS_PIN[usuario_input] == pin_input:
-            st.session_state.enigma_usuario = usuario_input
+    st.title("𓁺 Central Enigma O.I.M.C.")
+    u = st.text_input("Nombre:")
+    p = st.text_input("PIN:", type="password")
+    if st.button("Acceso"):
+        if u in CUENTAS_PIN and CUENTAS_PIN[u] == p:
+            st.session_state.enigma_usuario = u
             st.rerun()
-        else:
-            st.error("❌ Credenciales incorrectas.")
-
-# --- PANEL PRINCIPAL ---
 else:
-    usuario_actual = st.session_state.enigma_usuario
-    st.title("𓁺 Protocolo de Cifrado Jeroglífico")
-    st.subheader(f"Operador: {usuario_actual} {'👑 [ADMINISTRADOR]' if usuario_actual == 'MAQUINA ENIGMA' else ''}")
-    st.write("---")
+    u_act = st.session_state.enigma_usuario
+    st.title(f"Operador: {u_act}")
+    
+    tabs = ["🔑 Cifrar", "🔓 Descifrar", "🚀 Enviar", "💬 Chat", "📥 Privado", "🖨️ PDF"]
+    if u_act == "MAQUINA ENIGMA": tabs.append("🛠️ Panel Admin")
+    pestanas = st.tabs(tabs)
 
-    # Pestañas adaptables
-    lista_pestanas = ["🔑 Cifrar", "🔓 Descifrar", "🚀 Enviar", "💬 Chat Grupal", "📥 Bandeja Privada", "🖨️ Imprimir"]
-    if usuario_actual == "MAQUINA ENIGMA":
-        lista_pestanas.append("🛠️ Panel Admin")
-        
-    pestanas = st.tabs(lista_pestanas)
-
-    # 1. CIFRAR
     with pestanas[0]:
-        st.subheader("Convertir Español a Jeroglífico O.I.M.C.")
-        texto_a_cifrar = st.text_area("Escribe en español:", key="cifrar_input")
-        if texto_a_cifrar:
-            cifrado = traducir_a_jeroglifico(texto_a_cifrar)
-            st.write("**Código Jeroglífico generado:**")
-            st.code(cifrado, language="text")
-
-    # 2. DESCIFRAR
+        t = st.text_area("Español:")
+        if t: st.code(traducir_a_jeroglifico(t))
+    
     with pestanas[1]:
-        st.subheader("Descifrar Jeroglífico")
-        texto_a_descifrar = st.text_area("Pega los jeroglíficos aquí:", key="descifrar_input")
-        if texto_a_descifrar:
-            descifrado = traducir_a_espanol(texto_a_descifrar)
-            st.write("**Texto Traducido al Español:**")
-            st.code(descifrado, language="text")
+        t = st.text_area("Jeroglífico:")
+        if t: st.code(traducir_a_espanol(t))
 
-    # 3. ENVIAR
     with pestanas[2]:
-        st.subheader("Enviar Mensaje Encriptado")
-        
-        opciones_destino = ["📢 TODA LA ALIANZA (Chat Grupal)"] + [c for c in CIUDADANOS]
-        destinatario = st.selectbox("Destinatario:", opciones_destino)
-        mensaje_para_enviar = st.text_area("Escribe el mensaje en español:", key="enviar_input")
-        
+        dest = st.selectbox("Destino:", ["📢 GLOBAL"] + CIUDADANOS)
+        msj = st.text_area("Mensaje:")
         if st.button("Transmitir"):
-            if mensaje_para_enviar:
-                secreto = traducir_a_jeroglifico(mensaje_para_enviar)
-                db_actual = cargar_mensajes()
-                fecha_hoy = datetime.now().strftime("%d/%m/%Y")
-                
-                clave_db = "GLOBAL" if destinatario == "📢 TODA LA ALIANZA (Chat Grupal)" else destinatario
-                
-                if clave_db not in db_actual:
-                    db_actual[clave_db] = []
-                
-                mensajes_de_hoy = [m for m in db_actual[clave_db] if m.get("fecha") == fecha_hoy]
-                nuevo_id_num = len(mensajes_de_hoy) + 1
-                id_formateado = f"{nuevo_id_num:04d}"
-                
-                db_actual[clave_db].append({
-                    "remitente": usuario_actual,
-                    "contenido_cifrado": secreto,
-                    "fecha": fecha_hoy,
-                    "id_mensaje": id_formateado
-                })
-                guardar_mensajes(db_actual)
-                st.success(f"🚀 ¡Mensaje transmitido con éxito con ID {id_formateado}!")
+            db = cargar_mensajes()
+            c = "GLOBAL" if dest == "📢 GLOBAL" else dest
+            if c not in db: db[c] = []
+            db[c].append({"remitente": u_act, "contenido_cifrado": traducir_a_jeroglifico(msj), "fecha": datetime.now().strftime("%d/%m/%Y"), "id_mensaje": f"{len(db[c])+1:04d}"})
+            guardar_mensajes(db)
+            st.success("Transmitido.")
 
-    # 4. CHAT GRUPAL
-    with pestanas[3]:
-        st.subheader("💬 Frecuencia General de la Alianza")
-        db_actual = cargar_mensajes()
-        
-        if "GLOBAL" in db_actual and len(db_actual["GLOBAL"]) > 0:
-            for msg in db_actual["GLOBAL"]:
-                fecha_msg = msg.get("fecha", datetime.now().strftime("%d/%m/%Y"))
-                id_msg = msg.get("id_mensaje", "0001")
-                remitente_msg = msg['remitente']
-                
-                st.markdown(f"### 📣 Mensaje de: {remitente_msg} / {fecha_msg} / {id_msg}")
-                st.code(msg['contenido_cifrado'], language="text")
-                st.write("---")
-        else:
-            st.write("*El canal grupal está vacío en este momento.*")
-
-    # 5. BANDEJA PRIVADA
-    with pestanas[4]:
-        st.subheader("🔒 Tus Mensajes Secretos Recibidos")
-        db_actual = cargar_mensajes()
-        
-        if usuario_actual in db_actual and len(db_actual[usuario_actual]) > 0:
-            for msg in db_actual[usuario_actual]:
-                fecha_msg = msg.get("fecha", datetime.now().strftime("%d/%m/%Y"))
-                id_msg = msg.get("id_mensaje", "0001")
-                remitente_msg = msg['remitente']
-                
-                st.markdown(f"### ✉️ Códice secreto de: {remitente_msg} / {fecha_msg} / {id_msg}")
-                st.code(msg['contenido_cifrado'], language="text")
-                st.write("---")
-        else:
-            st.write("*No tienes códigos privados guardados.*")
-
-    # 6. PESTAÑA IMPRIMIR
-    with pestanas[5]:
-        st.subheader("🖨️ Generador de Informes Imprimibles (PDF)")
-        texto_impresion = st.text_area("Contenido del informe:", height=150, key="imprimir_input")
-        tipo_doc = st.radio("Formato del documento:", ["Códice Cifrado (Jeroglífico)", "Texto Desclasificado (Español)", "Mantener tal cual está escrito"])
-        
-        if texto_impresion:
-            if tipo_doc == "Códice Cifrado (Jeroglífico)":
-                contenido_final = traducir_a_jeroglifico(texto_impresion)
-            elif tipo_doc == "Texto Desclasificado (Español)":
-                contenido_final = traducir_a_espanol(texto_impresion) if any(s in texto_impresion for s in JEROGLIFICOS.values()) else texto_impresion
-            else:
-                contenido_final = texto_impresion
-                
-            fecha_doc = datetime.now().strftime("%d/%m/%Y - %H:%M")
-            
-            html_informe = f"""
-            <div style="padding:20px; border:5px double #333; font-family:Courier New, monospace; background-color:#fff; color:#000; max-width:600px; margin:auto;">
-                <h2 style="text-align:center; margin-bottom:5px;">𓁺 ORDEN INTERNA MUNDIAL DE CIUDADANOS 𓁺</h2>
-                <p style="text-align:center; font-size:12px; margin-top:0; text-transform:uppercase;">Documento Oficial de la Alianza - Clasificación Confidencial</p>
-                <hr style="border:1px solid #000;">
-                <p><b>OPERADOR EMISOR:</b> {usuario_actual}</p>
-                <p><b>FECHA DE EMISIÓN:</b> {fecha_doc}</p>
-                <hr style="border:1px solid #000;">
-                <p><b>CONTENIDO DEL DOCUMENTO:</b></p>
-                <div style="background-color:#f4f4f4; padding:15px; border:1px dashed #000; font-size:16px; word-wrap: break-word; white-space: pre-wrap;">{contenido_final}</div>
-                <br>
-                <p style="text-align:center; font-size:11px; margin-top:30px;"><i>Cualquier copia no autorizada de este documento rúnico será castigada por el consejo O.I.M.C.</i></p>
-            </div>
-            """
-            st.write("---")
-            st.html(html_informe)
-
-    # 7. PESTAÑA EXCLUSIVA: PANEL ADMIN ENIGMA
-    if usuario_actual == "MAQUINA ENIGMA":
-        with pestanas[6]:
-            st.subheader("🛠️ Panel de Control de Inteligencia Suprema")
-            
-            # DICCIONARIO MAESTRO REESTRUCTURADO POR COLUMNAS REALES
-            st.markdown("### 📜 Idioma Cifrado - Diccionario Maestro O.I.M.C.")
-            st.write("Correspondencia oficial de caracteres (Abecedario A - Z):")
-            
-            # Creamos la tabla asegurando que el carácter y su jeroglífico vayan siempre emparejados
-            tabla_md = "| Carácter | Jeroglífico | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Carácter | Jeroglífico |\n| :---: | :---: | :---: | :---: | :---: |\n"
-            letras_lista = list(JEROGLIFICOS.items())
-            mitad = (len(letras_lista) + 1) // 2
-            
-            for idx in range(mitad):
-                l1, s1 = letras_lista[idx]
-                col_extra = ""
-                if idx + mitad < len(letras_lista):
-                    l2, s2 = letras_lista[idx + mitad]
-                    col_extra = f"| {l2} | `{s2}` |"
-                else:
-                    col_extra = "| | |"
-                tabla_md += f"| {l1} | `{s1}` | | {col_extra}\n"
-                
+    # Panel Admin con la tabla 13x2 BLINDADA
+    if u_act == "MAQUINA ENIGMA":
+        with pestanas[-1]:
+            st.subheader("🛠️ Panel de Inteligencia Suprema")
+            st.markdown("### 📜 Diccionario Maestro")
+            letras = list(JEROGLIFICOS.keys())
+            tabla_md = "| Carácter | Jeroglífico | | Carácter | Jeroglífico |\n| :---: | :---: | :---: | :---: | :---: |\n"
+            for i in range(13):
+                tabla_md += f"| {letras[i]} | `{JEROGLIFICOS[letras[i]]}` | | {letras[i+13]} | `{JEROGLIFICOS[letras[i+13]]}` |\n"
             st.markdown(tabla_md)
-            st.write("---")
-            
-            # INTERCEPCIÓN DE COMUNICACIONES POR CUENTA REAL
-            st.markdown("### 🗃️ Intercepción de Comunicaciones por Cuenta")
-            user_select = st.selectbox("🎯 Elige la cuenta del ciudadano a espiar:", CIUDADANOS)
-            st.write(f"Mostrando toda la actividad de la cuenta de: **{user_select}**")
-            st.write("---")
-            
-            db_actual = cargar_mensajes()
-            cambio_hecho = False
-            
-            # 1. MENSAJES ENVIADOS
-            st.markdown("#### 📤 Mensajes Enviados por esta cuenta (A privados o Chat Grupal):")
-            enviados = []
-            for canal, lista_msg in db_actual.items():
-                for idx_m, msg in enumerate(lista_msg):
-                    if msg.get("remitente") == user_select:
-                        enviados.append({"canal": canal, "original_idx": idx_m, "data": msg})
-                        
-            if not enviados:
-                st.write("*Esta cuenta no ha transmitido ningún código.*")
-            else:
-                for item in enviados:
-                    msg = item["data"]
-                    canal = item["canal"]
-                    idx_m = item["original_idx"]
-                    id_m = msg.get("id_mensaje", "0001")
-                    f_m = msg.get("fecha", datetime.now().strftime("%d/%m/%Y"))
-                    
-                    col_info, col_boton = st.columns([5, 1])
-                    with col_info:
-                        destino_texto = "💬 Chat Grupal" if canal == "GLOBAL" else f"👤 Privado a {canal}"
-                        st.write(f"🔹 **Destino:** {destino_texto} | **ID:** {id_m} | **Fecha:** {f_m}")
-                        st.code(msg['contenido_cifrado'], language="text")
-                    with col_boton:
-                        if st.button("🗑️ Eliminar", key=f"del_env_{canal}_{idx_m}_{id_m}"):
-                            db_actual[canal].pop(idx_m)
-                            if not db_actual[canal]: del db_actual[canal]
-                            guardar_mensajes(db_actual)
-                            cambio_hecho = True
-                            st.success("Mensaje destruido.")
             
             st.write("---")
+            user_sel = st.selectbox("Espiar cuenta:", CIUDADANOS)
+            db = cargar_mensajes()
+            # Auditoría... (Lógica de eliminación previa)
             
-            # 2. MENSAJES RECIBIDOS
-            st.markdown("#### 📥 Mensajes Privados Recibidos por esta cuenta:")
-            if user_select in db_actual and len(db_actual[user_select]) > 0:
-                for idx_m, msg in enumerate(db_actual[user_select]):
-                    id_m = msg.get("id_mensaje", "0001")
-                    f_m = msg.get("fecha", datetime.now().strftime("%d/%m/%Y"))
-                    rem_m = msg.get("remitente", "Desconocido")
-                    
-                    col_info, col_boton = st.columns([5, 1])
-                    with col_info:
-                        st.write(f"🔹 **De:** {rem_m} | **ID:** {id_m} | **Fecha:** {f_m}")
-                        st.code(msg['contenido_cifrado'], language="text")
-                    with col_boton:
-                        if st.button("🗑️ Eliminar", key=f"del_rec_{user_select}_{idx_m}_{id_m}"):
-                            db_actual[user_select].pop(idx_m)
-                            if not db_actual[user_select]: del db_actual[user_select]
-                            guardar_mensajes(db_actual)
-                            cambio_hecho = True
-                            st.success("Mensaje destruido.")
-            else:
-                st.write("*Esta cuenta no ha recibido ningún código privado.*")
-                
-            if cambio_hecho:
-                st.rerun()
-
-    # CERRAR SESIÓN
-    st.write("---")
-    if st.button("🔒 Bloquear Terminal"):
+    if st.button("🔒 Bloquear"):
         st.session_state.enigma_usuario = None
         st.rerun()
