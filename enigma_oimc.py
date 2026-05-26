@@ -8,7 +8,7 @@ st.set_page_config(page_title="Máquina Enigma O.I.M.C.", page_icon="𓁺", layo
 
 DB_MENSAJES = "enigma_mensajes.json"
 
-# 2. BASE DE DATOS DE CUENTAS Y PINES OFICIALES (¡Nueva cuenta admin añadida!)
+# 2. BASE DE DATOS DE CUENTAS Y PINES OFICIALES
 CUENTAS_PIN = {
     "MAQUINA ENIGMA": "2325",  # Cuenta Administrador Supremo
     "Juan": "2313",
@@ -112,7 +112,7 @@ if st.session_state.enigma_usuario is None:
 else:
     usuario_actual = st.session_state.enigma_usuario
     st.title("𓁺 Protocolo de Cifrado Jeroglífico")
-    st.subheader(f"Operador: {usuario_actual} {'👑 [ADMINISTADOR]' if usuario_actual == 'MAQUINA ENIGMA' else ''}")
+    st.subheader(f"Operador: {usuario_actual} {'👑 [ADMINISTRADOR]' if usuario_actual == 'MAQUINA ENIGMA' else ''}")
     st.write("---")
 
     # Configuración dinámica de pestañas dependiendo de si eres Admin o no
@@ -243,16 +243,13 @@ else:
             st.html(html_informe)
             st.info("💡 **Para guardarlo en PDF o Imprimirlo:** Haz clic derecho en cualquier parte blanca de la página de arriba, dale a **Imprimir** (o pulsa `Ctrl + P`) y selecciona **Guardar como PDF**.")
 
-    # 7. PESTAÑA EXCLUSIVA: PANEL ADMIN (Solo visible para MAQUINA ENIGMA)
+    # 7. PESTAÑA EXCLUSIVA: PANEL ADMIN (¡Filtrado de Historial por persona arreglado!)
     if usuario_actual == "MAQUINA ENIGMA":
         with pestanas[6]:
             st.subheader("🛠️ Panel de Control de Inteligencia Suprema")
             
             # --- SUBSECCIÓN A: EL ABECEDARIO DE JEROGLÍFICOS ---
             st.markdown("### 📜 Idioma Cifrado - Diccionario Maestro O.I.M.C.")
-            st.write("Tabla completa de correspondencia de caracteres:")
-            
-            # Formatear el diccionario en columnas bonitas de Markdown
             tabla_md = "| Letra | Jeroglífico | &nbsp;&nbsp;&nbsp;&nbsp; | Letra | Jeroglífico |\n| :---: | :---: | :---: | :---: | :---: |\n"
             letras_lista = list(JEROGLIFICOS.items())
             mitad = (len(letras_lista) + 1) // 2
@@ -268,24 +265,38 @@ else:
             st.markdown(tabla_md)
             st.write("---")
             
-            # --- SUBSECCIÓN B: CONTROL TOTAL DE HISTORIAL Y BORRADO ---
-            st.markdown("### 🗃️ Auditoría General de Mensajes del Servidor")
+            # --- SUBSECCIÓN B: AUDITORÍA CON FILTRO DE HISTORIAL SELECTIVO ---
+            st.markdown("### 🗃 shrink Auditoría General de Mensajes del Servidor")
             db_actual = cargar_mensajes()
+            
+            # Crear lista de canales disponibles para elegir en el menú
+            canales_existentes = list(db_actual.keys())
+            opciones_filtro = ["👁️ MOSTRAR TODO EL HISTORIAL"] + sorted(canales_existentes)
+            
+            canal_seleccionado = st.selectbox("🎯 Seleccionar canal de historial a inspeccionar:", opciones_filtro)
+            st.write("---")
+            
             cambio_hecho = False
             
             if not db_actual:
                 st.write("*La base de datos está completamente vacía.*")
             else:
-                for canal, lista_msg in list(db_actual.items()):
-                    st.markdown(f"#### Canal de Almacenamiento: `{canal}`")
+                # Decidir qué canales pintar según la elección del administrador
+                if canal_seleccionado == "👁️ MOSTRAR TODO EL HISTORIAL":
+                    canales_a_mostrar = list(db_actual.items())
+                else:
+                    canales_a_mostrar = [(canal_seleccionado, db_actual.get(canal_seleccionado, []))]
+                
+                for canal, lista_msg in canales_a_mostrar:
+                    st.markdown(f"#### Canal de Almacenamiento actual: `{canal}`")
                     if not lista_msg:
-                        st.write("*Canal vacío.*")
+                        st.write("*No hay mensajes registrados en este canal.*")
                         continue
                         
                     for idx_m, msg in enumerate(lista_msg):
-                        f_m = msg.get("fecha", "---")
-                        id_m = msg.get("id_mensaje", "---")
-                        rem_m = msg.get("remitente", "---")
+                        f_m = msg.get("fecha", datetime.now().strftime("%d/%m/%Y"))
+                        id_m = msg.get("id_mensaje", f"{idx_m+1:04d}")
+                        rem_m = msg.get("remitente", "Desconocido")
                         cif_m = msg.get("contenido_cifrado", "")
                         
                         col_info, col_boton = st.columns([5, 1])
@@ -293,15 +304,13 @@ else:
                             st.write(f"🔹 **De:** {rem_m} | **ID:** {id_m} | **Fecha:** {f_m}")
                             st.code(cif_m, language="text")
                         with col_boton:
-                            # Botón con una clave única para evitar conflictos en Streamlit
                             if st.button("🗑️ Eliminar", key=f"del_{canal}_{idx_m}_{id_m}"):
                                 db_actual[canal].pop(idx_m)
-                                # Si el canal se queda vacío, limpiarlo
                                 if not db_actual[canal]:
                                     del db_actual[canal]
                                 guardar_mensajes(db_actual)
                                 cambio_hecho = True
-                                st.success("¡Mensaje destruído!")
+                                st.success("¡Mensaje destruido!")
                     st.write("---")
                     
                 if cambio_hecho:
