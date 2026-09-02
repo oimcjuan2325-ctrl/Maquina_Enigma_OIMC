@@ -3,14 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cifrador Oculto Amigable</title>
+    <title>Cifrador Directo Sin Contraseña</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
-        @page {
-            size: A4;
-            margin: 15mm 12mm;
-            background-color: #f4f6f8;
-        }
         body {
             margin: 0;
             padding: 0;
@@ -39,7 +34,7 @@
             font-size: 14px;
             color: #444;
         }
-        textarea, input[type="text"] {
+        textarea {
             width: 100%;
             padding: 12px;
             margin-top: 6px;
@@ -59,7 +54,6 @@
             width: 100%;
             font-size: 16px;
             font-weight: 600;
-            transition: background 0.2s;
         }
         button:hover { background-color: #1557b0; }
         .output-box {
@@ -89,115 +83,58 @@
 <body>
 
 <div class="container">
-    <h2>Cifrador con Llave Oculta</h2>
-    <p class="hint">Este sistema de cifrado es súper sencillo (tipo César invertido con mezcla de caracteres), totalmente descifrable a simple vista si le dedicas un par de minutos, y guarda la clave secreta empaquetada de forma invisible dentro del propio código cifrado.</p>
+    <h2>Cifrador Automático (Sin Contraseña)</h2>
+    <p class="hint">Este sistema transforma el texto al instante en un formato cifrado legible pero oculto a simple vista, sin necesidad de recordar ninguna clave.</p>
 
     <!-- CIFRAR -->
     <label for="inputText">Mensaje original:</label>
     <textarea id="inputText" rows="3" placeholder="Escribe aquí tu mensaje..."></textarea>
 
-    <label for="inputKey">Palabra clave secreta:</label>
-    <input type="text" id="inputKey" placeholder="Ej: patata">
+    <button onclick="cifrarSinClave()">Cifrar Mensaje</button>
 
-    <button onclick="cifrar()">Cifrar y Ocultar Clave</button>
-
-    <label>Texto cifrado resultante (cópialo y mándaselo):</label>
+    <label>Texto cifrado resultante:</label>
     <div id="outputCifrado" class="output-box"></div>
 
     <hr>
 
     <!-- DESCIFRAR -->
-    <h2>Descifrador Fácil</h2>
+    <h2>Descifrador Automático</h2>
     
     <label for="inputCiphertext">Pega aquí el texto cifrado:</label>
     <textarea id="inputCiphertext" rows="3" placeholder="Pega el mensaje cifrado aquí..."></textarea>
 
-    <button onclick="descifrar()">Descifrar Mensaje</button>
+    <button onclick="descifrarSinClave()">Descifrar Mensaje</button>
 
     <label>Mensaje recuperado:</label>
     <div id="outputDescifrado" class="output-box" style="color: #16a34a; font-weight: bold;"></div>
 </div>
 
 <script>
-    // Sistema de cifrado casero reversible y muy fácil de seguir
-    function customEncrypt(text, key) {
-        let combined = key + "|||" + text;
-        let encoded = "";
-        for (let i = 0; i < combined.length; i++) {
-            let charCode = combined.charCodeAt(i);
-            // Desplazamiento simple basado en la longitud de la clave
-            let shifted = charCode + key.length;
-            encoded += String.fromCharCode(shifted);
-        }
-        // Convertimos a base64 seguro para texto
-        return btoa(unescape(encodeURIComponent(encoded)));
-    }
-
-    function customDecrypt(ciphertext) {
-        try {
-            let decoded = decodeURIComponent(escape(atob(ciphertext)));
-            // Buscamos la clave oculta que está antes del separador |||
-            let original = "";
-            // Para descifrar este sistema casero, necesitamos adivinar el desplazamiento o extraerlo
-            // Hagamos que la clave vaya incrustada explícitamente de forma legible o semi-oculta en el texto:
-            // Estructura: [base64_texto]::[clave]
-            throw new Error("Usar formato alternativo");
-        } catch(e) {
-            // Manejador robusto para el formato de clave incrustada visible/fácil
-            return null;
-        }
-    }
-
-    // Nuevo enfoque ultrarrápido y extremadamente fácil de descifrar a mano:
-    // Cifrado XOR o inversión de caracteres con la clave adjunta al final separada por un punto.
-    // Ejemplo: mensaje cifrado = [texto_invertido_con_desplazamiento].[clave]
-    
-    function cifrar() {
+    function cifrarSinClave() {
         let text = document.getElementById('inputText').value;
-        let key = document.getElementById('inputKey').value;
-        if (!text || !key) {
-            alert("Escribe un texto y una clave.");
+        if (!text) {
+            alert("Escribe un texto.");
             return;
         }
-
-        // Algoritmo supersencillo: invertimos el texto y sumamos el código de la clave
-        let cipher = "";
-        for (let i = 0; i < text.length; i++) {
-            let code = text.charCodeAt(i) + key.charCodeAt(i % key.length);
-            cipher += code.toString(16) + "-";
-        }
-        
-        // Adjuntamos la clave al final de forma sutil pero totalmente accesible
-        // Formato: [datos_hex].[clave_en_base64]
-        let hiddenKey = btoa(key);
-        let finalResult = cipher.slice(0, -1) + "." + hiddenKey;
-        
-        document.getElementById('outputCifrado').innerText = finalResult;
+        // Invertimos el texto y lo codificamos en Base64 para que parezca un código cifrado
+        let reversed = text.split('').reverse().join('');
+        let encoded = btoa(unescape(encodeURIComponent(reversed)));
+        document.getElementById('outputCifrado').innerText = encoded;
     }
 
-    function descifrar() {
+    function descifrarSinClave() {
         let input = document.getElementById('inputCiphertext').value.trim();
-        if (!input.includes(".")) {
-            alert("El texto no tiene el formato correcto.");
+        if (!input) {
+            alert("Pega un texto cifrado.");
             return;
         }
-
         try {
-            let parts = input.split(".");
-            let cipherParts = parts[0].split("-");
-            let key = atob(parts[1]); // La clave se extrae automáticamente del mensaje
-
-            let original = "";
-            for (let i = 0; i < cipherParts.length; i++) {
-                if (cipherParts[i] === "") continue;
-                let code = parseInt(cipherParts[i], 16);
-                let originalChar = String.fromCharCode(code - key.charCodeAt(i % key.length));
-                original += originalChar;
-            }
-
+            // Decodificamos de Base64 y volvemos a invertir los caracteres al orden original
+            let decodedBytes = decodeURIComponent(escape(atob(input)));
+            let original = decodedBytes.split('').reverse().join('');
             document.getElementById('outputDescifrado').innerText = original;
         } catch (err) {
-            document.getElementById('outputDescifrado').innerText = "Error al descifrar. Revisa el texto.";
+            document.getElementById('outputDescifrado').innerText = "Error: El texto no tiene un formato cifrado válido.";
         }
     }
 </script>
