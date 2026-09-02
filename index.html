@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cifrador y Descifrador AES</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 { color: #333; text-align: center; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover { background-color: #0056b3; }
+        .output-box {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 5px;
+            word-break: break-all;
+            font-family: monospace;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Cifrador AES</h2>
+
+    <label for="inputText">Texto a cifrar:</label>
+    <textarea id="inputText" rows="3" placeholder="Escribe tu mensaje aquí..."></textarea>
+
+    <label for="inputKey">Contraseña (clave):</label>
+    <input type="text" id="inputKey" placeholder="Ej: clave123">
+
+    <button onclick="cifrarTexto()">Cifrar Texto</button>
+
+    <label>Resultado Cifrado (Incluye la clave integrada):</label>
+    <div id="outputCifrado" class="output-box"></div>
+
+    <hr style="margin: 25px 0;">
+
+    <h2>Descifrador AES</h2>
+    
+    <label for="inputCiphertext">Texto cifrado (con la clave incluida):</label>
+    <textarea id="inputCiphertext" rows="3" placeholder="Pega aquí el texto cifrado..."></textarea>
+
+    <button onclick="descifrarTexto()">Descifrar Texto</button>
+
+    <label>Resultado Descifrado:</label>
+    <div id="outputDescifrado" class="output-box" style="color: #28a745; font-weight: bold;"></div>
+</div>
+
+<script>
+    const SEPARATOR = ":::KEY:::";
+
+    function cifrarTexto() {
+        const text = document.getElementById('inputText').value;
+        const key = document.getElementById('inputKey').value;
+
+        if (!text || !key) {
+            alert("Por favor, escribe un texto y una contraseña.");
+            return;
+        }
+
+        // Ciframos usando AES
+        const encrypted = CryptoJS.AES.encrypt(text, key).toString();
+        
+        // Empaquetamos el texto cifrado junto con la clave separados por un token para que sea autodescifrable
+        const packaged = encrypted + SEPARATOR + key;
+
+        document.getElementById('outputCifrado').innerText = packaged;
+    }
+
+    function descifrarTexto() {
+        const fullText = document.getElementById('inputCiphertext').value;
+
+        if (!fullText.includes(SEPARATOR)) {
+            alert("El formato no es válido o no incluye la clave integrada.");
+            return;
+        }
+
+        try {
+            // Separamos el texto cifrado de la clave oculta en el propio mensaje
+            const parts = fullText.split(SEPARATOR);
+            const ciphertext = parts[0];
+            const key = parts[1];
+
+            // Desciframos usando AES con la clave extraída
+            const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+            const originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+            if (!originalText) {
+                throw new Error("No se pudo descifrar");
+            }
+
+            document.getElementById('outputDescifrado').innerText = originalText;
+        } catch (error) {
+            document.getElementById('outputDescifrado').innerText = "Error: Contraseña incorrecta o texto corrupto.";
+        }
+    }
+</script>
+
+</body>
+</html>
