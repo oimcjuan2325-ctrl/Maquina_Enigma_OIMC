@@ -1,3 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cifrador Oculto Amigable</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        @page {
+            size: A4;
+            margin: 15mm 12mm;
+            background-color: #f4f6f8;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h2 {
+            color: #1a73e8;
+            margin-top: 0;
+            border-left: 4px solid #1a73e8;
+            padding-left: 10px;
+        }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #444;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin-top: 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #1557b0; }
+        .output-box {
+            background: #f8f9fa;
+            border: 1px dashed #cbd5e1;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 13px;
+            min-height: 40px;
+            color: #334155;
+        }
+        .hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Cifrador con Llave Oculta</h2>
+    <p class="hint">Este sistema de cifrado es súper sencillo (tipo César invertido con mezcla de caracteres), totalmente descifrable a simple vista si le dedicas un par de minutos, y guarda la clave secreta empaquetada de forma invisible dentro del propio código cifrado.</p>
+
+    <!-- CIFRAR -->
+    <label for="inputText">Mensaje original:</label>
+    <textarea id="inputText" rows="3" placeholder="Escribe aquí tu mensaje..."></textarea>
+
+    <label for="inputKey">Palabra clave secreta:</label>
+    <input type="text" id="inputKey" placeholder="Ej: patata">
+
+    <button onclick="cifrar()">Cifrar y Ocultar Clave</button>
+
+    <label>Texto cifrado resultante (cópialo y mándaselo):</label>
+    <div id="outputCifrado" class="output-box"></div>
+
+    <hr>
+
+    <!-- DESCIFRAR -->
+    <h2>Descifrador Fácil</h2>
+    
+    <label for="inputCiphertext">Pega aquí el texto cifrado:</label>
+    <textarea id="inputCiphertext" rows="3" placeholder="Pega el mensaje cifrado aquí..."></textarea>
+
+    <button onclick="descifrar()">Descifrar Mensaje</button>
+
+    <label>Mensaje recuperado:</label>
+    <div id="outputDescifrado" class="output-box" style="color: #16a34a; font-weight: bold;"></div>
+</div>
+
+<script>
+    // Sistema de cifrado casero reversible y muy fácil de seguir
+    function customEncrypt(text, key) {
+        let combined = key + "|||" + text;
+        let encoded = "";
+        for (let i = 0; i < combined.length; i++) {
+            let charCode = combined.charCodeAt(i);
+            // Desplazamiento simple basado en la longitud de la clave
+            let shifted = charCode + key.length;
+            encoded += String.fromCharCode(shifted);
+        }
+        // Convertimos a base64 seguro para texto
+        return btoa(unescape(encodeURIComponent(encoded)));
+    }
+
+    function customDecrypt(ciphertext) {
+        try {
+            let decoded = decodeURIComponent(escape(atob(ciphertext)));
+            // Buscamos la clave oculta que está antes del separador |||
+            let original = "";
+            // Para descifrar este sistema casero, necesitamos adivinar el desplazamiento o extraerlo
+            // Hagamos que la clave vaya incrustada explícitamente de forma legible o semi-oculta en el texto:
+            // Estructura: [base64_texto]::[clave]
+            throw new Error("Usar formato alternativo");
+        } catch(e) {
+            // Manejador robusto para el formato de clave incrustada visible/fácil
+            return null;
+        }
+    }
+
+    // Nuevo enfoque ultrarrápido y extremadamente fácil de descifrar a mano:
+    // Cifrado XOR o inversión de caracteres con la clave adjunta al final separada por un punto.
+    // Ejemplo: mensaje cifrado = [texto_invertido_con_desplazamiento].[clave]
+    
+    function cifrar() {
+        let text = document.getElementById('inputText').value;
+        let key = document.getElementById('inputKey').value;
+        if (!text || !key) {
+            alert("Escribe un texto y una clave.");
+            return;
+        }
+
+        // Algoritmo supersencillo: invertimos el texto y sumamos el código de la clave
+        let cipher = "";
+        for (let i = 0; i < text.length; i++) {
+            let code = text.charCodeAt(i) + key.charCodeAt(i % key.length);
+            cipher += code.toString(16) + "-";
+        }
+        
+        // Adjuntamos la clave al final de forma sutil pero totalmente accesible
+        // Formato: [datos_hex].[clave_en_base64]
+        let hiddenKey = btoa(key);
+        let finalResult = cipher.slice(0, -1) + "." + hiddenKey;
+        
+        document.getElementById('outputCifrado').innerText = finalResult;
+    }
+
+    function descifrar() {
+        let input = document.getElementById('inputCiphertext').value.trim();
+        if (!input.includes(".")) {
             alert("El texto no tiene el formato correcto.");
             return;
         }
